@@ -55,7 +55,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
-          const percentage = stat.total > 0 ? Math.round((stat.value / stat.total) * 100) : 0;
+          const percentage = stat.total > 0 ? Math.min(100, Math.round((stat.value / stat.total) * 100)) : 0;
           
           return (
             <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">

@@ -1,0 +1,23 @@
+/* View Transition API for smooth theme switching */
+
+html {
+  view-transition-name: root;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+
+body {
+  transition: background 0.3s, color 0.3s;
+}
+
+html.dark {
+  background: #18181b;
+  color: #fafafa;
+}
+
+html.light {
+  background: #fafafa;
+  color: #18181b;
+}
+
+/* Add your global styles below */

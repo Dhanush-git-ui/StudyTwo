@@ -4,9 +4,9 @@ export const mockVideos: Video[] = [
   {
     id: 'video-1',
     title: 'Introduction to Machine Learning',
-    youtubeId: 'aircAruvnKk',
+    youtubeId: 'ukzFI9rgwfU',
     duration: '19:13',
-    thumbnailUrl: 'https://img.youtube.com/vi/aircAruvnKk/maxresdefault.jpg',
+    thumbnailUrl: 'https://img.youtube.com/vi/ukzFI9rgwfU/maxresdefault.jpg',
     keyTimestamps: [
       { time: '2:15', description: 'What is Machine Learning?' },
       { time: '5:30', description: 'Types of ML Algorithms' },
@@ -17,9 +17,9 @@ export const mockVideos: Video[] = [
   {
     id: 'video-2',
     title: 'Linear Algebra Fundamentals',
-    youtubeId: 'fNk_zzaMoSs',
+    youtubeId: 'LlKAna21fLE',
     duration: '14:52',
-    thumbnailUrl: 'https://img.youtube.com/vi/fNk_zzaMoSs/maxresdefault.jpg',
+    thumbnailUrl: 'https://img.youtube.com/vi/LlKAna21fLE/maxresdefault.jpg',
     keyTimestamps: [
       { time: '1:20', description: 'Vector Operations' },
       { time: '6:10', description: 'Matrix Multiplication' },
@@ -162,5 +162,25 @@ export const mockLearningPaths: LearningPath[] = [
         completed: false,
       },
     ],
+  },
+];
+export const mockFlashcards = [
+  {
+    id: "1",
+    front: "What is React?",
+    back: "A JavaScript library for building UIs",
+    difficulty: "easy",
+  },
+  {
+    id: "2",
+    front: "Explain JSX",
+    back: "A syntax extension that lets you write HTML in JS",
+    difficulty: "medium",
+  },
+  {
+    id: "3",
+    front: "What does useEffect do?",
+    back: "It runs side effects in functional components",
+    difficulty: "hard",
   },
 ];

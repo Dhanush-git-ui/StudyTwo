@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
 import SearchInterface from './components/SearchInterface';
@@ -9,8 +9,12 @@ import QuizSystem from './components/QuizSystem';
 import LearningPaths from './components/LearningPaths';
 import BookmarkManager from './components/BookmarkManager';
 import NoteGenerator from './components/NoteGenerator';
-import { mockVideos, mockDocuments, mockQuizzes, mockLearningPaths } from './data/mockData';
+import { mockVideos, mockDocuments, mockQuizzes, mockLearningPaths, mockFlashcards } from './data/mockData';
 import { SearchResult } from './types';
+import FlashcardViewer from './components/FlashcardViewer';
+import { ThemeProvider } from './contexts/ThemeContext';
+import './styles/flashcard.css';
+
 
 function App() {
   const [activeView, setActiveView] = useState('dashboard');
@@ -48,18 +52,43 @@ function App() {
         return <BookmarkManager onViewChange={setActiveView} />;
       case 'notes':
         return <NoteGenerator />;
+      case 'flashcards':
+        return <FlashcardViewer flashcards={mockFlashcards} />;
+
       default:
         return <Dashboard onViewChange={setActiveView} />;
     }
   };
 
+  // Add a class to trigger page transition when component mounts
+  useEffect(() => {
+    const pageTransition = document.createElement('div');
+    pageTransition.className = 'page-transition';
+    document.body.appendChild(pageTransition);
+    
+    // Trigger animation after a small delay
+    setTimeout(() => {
+      pageTransition.classList.add('active');
+    }, 50);
+    
+    return () => {
+      if (pageTransition && pageTransition.parentNode) {
+        document.body.removeChild(pageTransition);
+      }
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation activeView={activeView} onViewChange={setActiveView} />
-      <main className="pb-8">
-        {renderActiveView()}
-      </main>
-    </div>
+    
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+        <Navigation activeView={activeView} onViewChange={setActiveView} />
+        <main className="pb-8">
+          <div className="transition-all duration-300 ease-in-out">
+            {renderActiveView()}
+          </div>
+        </main>
+      </div>
+    
   );
 }
 

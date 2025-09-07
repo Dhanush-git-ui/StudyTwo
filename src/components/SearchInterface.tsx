@@ -11,24 +11,60 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearchComplete }) =
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [apiStatus, setApiStatus] = useState<string>('');
 
   const searchService = SearchService.getInstance();
+
+  // Test API on component mount
+  React.useEffect(() => {
+    const testAPI = async () => {
+      console.log('Testing Gemini API with key:', import.meta.env.VITE_GEMINI_API_KEY?.substring(0, 10) + '...');
+      const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      
+      if (geminiKey) {
+        try {
+          // Simple test call to Gemini
+          const testResult = await searchService.testGeminiConnection();
+          console.log('Gemini test result:', testResult);
+          setApiStatus(`✅ Gemini API working - ${testResult}`);
+        } catch (error) {
+          console.error('Gemini API test failed:', error);
+          setApiStatus(`❌ Gemini API failed: ${error.message}`);
+        }
+      } else {
+        setApiStatus('❌ Gemini API key not found');
+      }
+    };
+    
+    testAPI();
+  }, []);
 
   const handleSearch = async (searchQuery: string) => {
     if (!searchQuery.trim()) return;
 
+    console.log('Starting search for:', searchQuery);
     setIsSearching(true);
     
     try {
-      // Perform parallel searches for all content types
-      const [videos, articles, papers, quiz, flashcards] = await Promise.all([
+      
+      // Perform parallel searches for content types (except quiz which takes longer)
+      console.log('Fetching videos, articles, and papers...');
+      const [videos, articles, papers] = await Promise.all([
         searchService.searchYouTubeVideos(searchQuery),
         searchService.searchArticles(searchQuery),
-        searchService.searchResearchPapers(searchQuery),
-        searchService.generateQuiz(searchQuery),
-        searchService.generateFlashcards(searchQuery)
+        searchService.searchResearchPapers(searchQuery)
       ]);
 
+      console.log('Basic search completed. Starting AI content generation...');
+      
+      // Generate AI content (quiz and flashcards) - these may take longer
+      const [quiz, flashcards] = await Promise.all([
+        searchService.generateQuiz(searchQuery, 'intermediate'),
+        searchService.generateFlashcards(searchQuery)
+      ]);
+      
+      console.log('AI content generation completed. Quiz questions:', quiz.questions.length, 'Flashcards:', flashcards.length);
+      
       const searchResult: SearchResult = {
         id: `search-${Date.now()}`,
         query: searchQuery,
@@ -46,6 +82,7 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearchComplete }) =
       onSearchComplete(searchResult);
     } catch (error) {
       console.error('Search error:', error);
+      alert('Search failed. Please check your API keys and try again.');
     } finally {
       setIsSearching(false);
     }
@@ -74,6 +111,11 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearchComplete }) =
         <p className="text-xl text-gray-600 mb-8">
           Get comprehensive learning resources including videos, articles, research papers, quizzes, and flashcards
         </p>
+        {apiStatus && (
+          <div className={`text-sm p-2 rounded ${apiStatus.includes('✅') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            API Status: {apiStatus}
+          </div>
+        )}
       </div>
 
       {/* Search Form */}
