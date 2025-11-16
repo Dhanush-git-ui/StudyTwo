@@ -27,9 +27,14 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearchComplete }) =
           const testResult = await searchService.testGeminiConnection();
           console.log('Gemini test result:', testResult);
           setApiStatus(`✅ Gemini API working - ${testResult}`);
-        } catch (error) {
+        } catch (error: any) {
           console.error('Gemini API test failed:', error);
-          setApiStatus(`❌ Gemini API failed: ${error.message}`);
+          // Check if this is a rate limit error
+          if (error.message?.includes('429') || error.message?.includes('quota')) {
+            setApiStatus(`❌ Gemini API failed: Rate limit exceeded. Please wait a moment and try again.`);
+          } else {
+            setApiStatus(`❌ Gemini API failed: ${error.message}`);
+          }
         }
       } else {
         setApiStatus('❌ Gemini API key not found');
@@ -46,6 +51,8 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearchComplete }) =
     setIsSearching(true);
     
     try {
+      // Small delay to help with rate limiting
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Perform parallel searches for content types (except quiz which takes longer)
       console.log('Fetching videos, articles, and papers...');
@@ -56,6 +63,9 @@ const SearchInterface: React.FC<SearchInterfaceProps> = ({ onSearchComplete }) =
       ]);
 
       console.log('Basic search completed. Starting AI content generation...');
+      
+      // Add a small delay between requests to help with rate limiting
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Generate AI content (quiz and flashcards) - these may take longer
       const [quiz, flashcards] = await Promise.all([

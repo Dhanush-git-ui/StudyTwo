@@ -175,10 +175,10 @@ const EnhancedFlashcards: React.FC<EnhancedFlashcardsProps> = ({
             </div>
             
             <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
+              <div className="text-center w-full">
                 <BookOpen className="h-12 w-12 text-emerald-600 dark:text-emerald-400 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-emerald-900 dark:text-emerald-100 mb-4">Answer</h3>
-                <div className="text-base text-emerald-800 dark:text-emerald-200 leading-relaxed max-w-2xl">
+                <div className="flashcard-answer-scroll text-base text-emerald-800 dark:text-emerald-200 leading-relaxed max-w-2xl mx-auto w-full">
                   {currentCard.back.split('\n').map((paragraph, index) => (
                     <p key={index} className="mb-3 last:mb-0">{paragraph}</p>
                   ))}

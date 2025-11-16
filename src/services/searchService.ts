@@ -1,4 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { AnalyticsService } from './analyticsService';
+import apiManager from '../lib/apiManager';
+import rateLimiter from '../lib/rateLimiter';
 
 // This service will handle API calls to various educational content sources
 // Add your API keys and implement actual API calls here
@@ -70,7 +73,7 @@ export class SearchService {
 
       const detailsData = await detailsResponse.json();
       
-      return searchData.items.map((item: any, index: number) => {
+      const results = searchData.items.map((item: any, index: number) => {
         const details = detailsData.items[index];
         return {
           id: item.id.videoId,
@@ -84,9 +87,14 @@ export class SearchService {
           description: item.snippet.description
         };
       });
+      // Log search
+      AnalyticsService.logSearch({ query, resultsCount: results.length, source: 'youtube' });
+      return results;
     } catch (error) {
       console.error('YouTube API error:', error);
-      return this.getMockYouTubeVideos(query);
+      const results = this.getMockYouTubeVideos(query);
+      AnalyticsService.logSearch({ query, resultsCount: results.length, source: 'youtube' });
+      return results;
     }
   }
 
@@ -99,10 +107,14 @@ export class SearchService {
       // );
       
       // Mock data for demonstration
-      return this.getMockArticles(query);
+      const results = this.getMockArticles(query);
+      AnalyticsService.logSearch({ query, resultsCount: results.length, source: 'articles' });
+      return results;
     } catch (error) {
       console.error('Google Search API error:', error);
-      return this.getMockArticles(query);
+      const results = this.getMockArticles(query);
+      AnalyticsService.logSearch({ query, resultsCount: results.length, source: 'articles' });
+      return results;
     }
   }
 
@@ -116,10 +128,14 @@ export class SearchService {
       // );
       
       // Mock data for demonstration
-      return this.getMockResearchPapers(query);
+      const results = this.getMockResearchPapers(query);
+      AnalyticsService.logSearch({ query, resultsCount: results.length, source: 'papers' });
+      return results;
     } catch (error) {
       console.error('Research paper API error:', error);
-      return this.getMockResearchPapers(query);
+      const results = this.getMockResearchPapers(query);
+      AnalyticsService.logSearch({ query, resultsCount: results.length, source: 'papers' });
+      return results;
     }
   }
 
@@ -131,7 +147,12 @@ export class SearchService {
         return this.getMockQuiz(topic);
       }
       
-      const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      // Wait for rate limiter
+      await rateLimiter.waitForNextCall();
+      
+      // Use ApiManager to get the appropriate model
+      const modelName = apiManager.getModelForTask('quiz');
+      const model = this.genAI.getGenerativeModel({ model: modelName });
       
       const prompt = `You are an expert educational content creator. Create a comprehensive ${difficulty} level quiz about "${topic}" with exactly 8 multiple choice questions.
 
@@ -158,7 +179,8 @@ Requirements for each question:
 7. Focus on practical knowledge and real-world applications
 8. Avoid generic or superficial questions`;
 
-      const result = await this.retryWithBackoff(() => model.generateContent(prompt));
+      // Use ApiManager retry mechanism
+      const result = await apiManager.retryWithBackoff(() => model.generateContent(prompt));
       const response = await result.response;
       const jsonText = response.text().replace(/```json\n?|\n?```/g, '').trim();
       
@@ -204,8 +226,13 @@ Requirements for each question:
         return this.getMockFlashcards(topic);
       }
 
+      // Wait for rate limiter
+      await rateLimiter.waitForNextCall();
+
       console.log('Attempting to call Gemini API...');
-      const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      // Use ApiManager to get the appropriate model
+      const modelName = apiManager.getModelForTask('flashcard');
+      const model = this.genAI.getGenerativeModel({ model: modelName });
       
       const prompt = `You are an expert educational content creator specializing in comprehensive study materials. Create exactly 8 high-quality flashcards about "${topic}".
 
@@ -239,7 +266,8 @@ Requirements for each flashcard:
 Focus on creating flashcards that promote deep learning and critical thinking about ${topic}.`;
 
       console.log('Sending request to Gemini...');
-      const result = await this.retryWithBackoff(() => model.generateContent(prompt));
+      // Use ApiManager retry mechanism
+      const result = await apiManager.retryWithBackoff(() => model.generateContent(prompt));
       const response = await result.response;
       console.log('Gemini API response received for flashcards');
       const jsonText = response.text().replace(/```json\n?|\n?```/g, '').trim();
@@ -261,33 +289,6 @@ Focus on creating flashcards that promote deep learning and critical thinking ab
     }
   }
 
-  // Retry mechanism with exponential backoff for rate limiting
-  private async retryWithBackoff<T>(
-    operation: () => Promise<T>,
-    maxRetries: number = 3,
-    baseDelay: number = 1000
-  ): Promise<T> {
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        return await operation();
-      } catch (error: any) {
-        const isRateLimit = error.message?.includes('429');
-        const isLastAttempt = attempt === maxRetries;
-        
-        if (!isRateLimit || isLastAttempt) {
-          throw error;
-        }
-        
-        // Exponential backoff: 1s, 2s, 4s
-        const delay = baseDelay * Math.pow(2, attempt);
-        console.warn(`Rate limited, retrying in ${delay}ms... (attempt ${attempt + 1}/${maxRetries + 1})`);
-        
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-    
-    throw new Error('Max retries exceeded');
-  }
 
   // Test Gemini connection
   async testGeminiConnection() {
@@ -295,8 +296,15 @@ Focus on creating flashcards that promote deep learning and critical thinking ab
       throw new Error('Gemini API not initialized');
     }
     
-    const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContent("Say hello in one word");
+    // Wait for rate limiter
+    await rateLimiter.waitForNextCall();
+    
+    // Use ApiManager to get the appropriate model
+    const modelName = apiManager.getModelForTask('test');
+    const model = this.genAI.getGenerativeModel({ model: modelName });
+    
+    // Use ApiManager retry mechanism
+    const result = await apiManager.retryWithBackoff(() => model.generateContent("Say hello in one word"));
     const response = await result.response;
     return response.text();
   }
