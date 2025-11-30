@@ -1,3 +1,4 @@
+
 # 🚀 Indian Accent Detection using HuBERT
 
 This project identifies *six Indian regional accents* — Gujarati, Hindi, Kannada, Malayalam, Tamil, and Telugu — from a speech audio file using *HuBERT (Hidden-Unit BERT)* embeddings and an *MLP classifier*.
